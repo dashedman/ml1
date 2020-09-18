@@ -52,9 +52,8 @@ LOO <- function(dat, func, maxK = 1, l = 2){
         point = selection[i,]
 
         for(k in 1:maxK){
-            print(paste(i,k))
             if(point[1, sel_dim+1] != kNN(
-              selection[, 1:sel_dim],
+              new_selection,
               point[1:sel_dim],
               k=k
             )){
@@ -62,56 +61,79 @@ LOO <- function(dat, func, maxK = 1, l = 2){
             }
         }
     }
-    print(rat)
-    return (rat)
+    return (list(rating=rat, selection=selection))
 }
 
-#paint iris
-png(paste0("kNN_plot", ".png"))
+####################################
+.random_1NN <- function(){
+    #1NN calc
+    #paint iris
+    png(paste0("1NN_plot", ".png"))
+    plot(iris[, c(1,4)],
+         pch = 21,
+         bg = colors[iris$Species],
+         col = colors[iris$Species]
+    )
+    #generate data
+    n = 5
+    if(!is.na(args[1])) {
+      n = args[1]
+    }
+    points = vector("list", n)
+    for(i in 1:n){
+      points[[i]] = c(runif(1, 4, 7), runif(1, 0, 2))
+    }
+    #use 1NN
+    for(point in points){
+        class = kNN(iris[, c(1, 4, 5)], point)
+        #paint points
+        points(point[1],point[2],
+              pch = 24,
+              bg = colors[class],
+              col = colors[class])
+    }
+    dev.off()
+}
+
+#calc 6NN map
+.map_6NN <- function(){
+    png(paste0("6NN_map_plot", ".png"))
+    plot(
+      iris[,3:4],
+      pch = 21,
+      bg = colors[iris$Species],
+      col = colors[iris$Species]
+    )
+    for(x in seq(1,8,0.1)){
+        for(y in seq(0.1,4.5,0.1)){
+            points(x,y,pch=1,col = colors[kNN(iris[,3:5], c(y,x), k=6)])
+        }
+    }
+    dev.off()
+}
+
+#calc LOO for kNN
+.LOO_15_20 <- function(){
+    result = LOO(iris[, 3:5], kNN, maxK=15, l=20)
+    png(paste0("LOO_kNN_plot", ".png"), width = 1080, height = 540)
+    par(mfrow=c(1,2))
+    plot(
+      data.frame(k=1:length(result$rating),Rating=result$rating),
+      type="l",
+      col="red"
+    )
+    plot(
+      result$selection[, 1:2],
+      pch = 21,
+      bg = colors[result$selection$Species],
+      col = colors[result$selection$Species]
+    )
+    dev.off()
+}
+
 colors <- c(
     "setosa" = "orange",
     "versicolor" = "violet",
     "virginica" = "purple"
 )
-plot(iris[, c(1,4)],
-     pch = 21,
-     bg = colors[iris$Species],
-     col = colors[iris$Species]
-)
-
-
-#generate data
-n = 5
-if(!is.na(args[1])) {
-  n = args[1]
-}
-points = vector("list", n)
-for(i in 1:n){
-  points[[i]] = c(runif(1, 4, 7), runif(1, 0, 2))
-}
-
-#use 1NN
-cat("Points:\n")
-
-for(point in points){
-    print(point)
-    class = kNN(iris[, c(1, 4, 5)], point)
-
-    #paint points
-    points(point[1],point[2],
-          pch = 24,
-          bg = colors[class],
-          col = colors[class])
-}
-dev.off()
-
-#calc LOO for kNN
-rating = LOO(iris[, 3:5], kNN, maxK = 15, l=20)
-
-png(paste0("LOO_kNN_plot", ".png"))
-plot(
-  data.frame(k=1:length(rating),Rating=rating),
-  type="l",
-  col="red"
-)
-dev.off()
+.LOO_15_20()
