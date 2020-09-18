@@ -40,8 +40,34 @@ dist_sort = function(dat, point, dist_func = euclid_distance){
       return (class)
   }
 
+LOO <- function(dat, func, maxK = 1, l = 2){
+    print(paste0("LOO for k=",maxK,";l=",l))
+    indexses = sample(1:150, l, replace = F)
+    rat = rep(0, maxK)
+    selection = dat[indexses,]
+    sel_dim = dim(selection)[2] - 1
+
+    for(i in 1:l){
+        new_selection = selection[-i,]
+        point = selection[i,]
+
+        for(k in 1:maxK){
+            print(paste(i,k))
+            if(point[1, sel_dim+1] != kNN(
+              selection[, 1:sel_dim],
+              point[1:sel_dim],
+              k=k
+            )){
+                rat[k] = rat[k]+1
+            }
+        }
+    }
+    print(rat)
+    return (rat)
+}
+
 #paint iris
-png(paste0("plot", ".png"))
+png(paste0("kNN_plot", ".png"))
 colors <- c(
     "setosa" = "orange",
     "versicolor" = "violet",
@@ -77,5 +103,15 @@ for(point in points){
           bg = colors[class],
           col = colors[class])
 }
+dev.off()
 
+#calc LOO for kNN
+rating = LOO(iris[, 3:5], kNN, maxK = 15, l=20)
+
+png(paste0("LOO_kNN_plot", ".png"))
+plot(
+  data.frame(k=1:length(rating),Rating=rating),
+  type="l",
+  col="red"
+)
 dev.off()
