@@ -22,10 +22,10 @@ dist_sort = function(dat, point, dist_func = euclid_distance){
 
 
   ##  Применяем метод kNN
-  kNN <- function(dat, point, k = 1)
+  kNN <- function(dat, point, k = 1, dist_func = euclid_distance)
   {
       ##  Сортируем выборку согласно классифицируемого объекта
-      orderedDat <- dist_sort(dat, point)
+      orderedDat <- dist_sort(dat, point, dist_func)
       n <- dim(orderedDat)[2] - 1
 
       ##  Получаем классы первых k соседей
@@ -40,8 +40,26 @@ dist_sort = function(dat, point, dist_func = euclid_distance){
       return (class)
   }
 
+
+  kwNN <- function(dat, point, k = 1, dist_func = euclid_distance)
+  {
+      w <- exp((-1:-k)/1000)
+
+      orderedDat <- dist_sort(dat, point, dist_func)
+      n <- dim(orderedDat)[2] - 1
+
+      classes = rep(0, length(levels(orderedDat[, n+1])))
+      for(i in 1:k){
+          classes[orderedDat[i, n+1]] = classes[orderedDat[i, n+1]] + w[i]
+      }
+
+      class <- levels(orderedDat[, n+1])[which.max(classes)]
+
+
+      return (class)
+  }
+
 LOO <- function(dat, func, maxK = 1, l = 2){
-    print(paste0("LOO for k=",maxK,";l=",l))
     indexses = sample(1:150, l, replace = F)
     rat = rep(0, maxK)
     selection = dat[indexses,]
@@ -52,12 +70,13 @@ LOO <- function(dat, func, maxK = 1, l = 2){
         point = selection[i,]
 
         for(k in 1:maxK){
-            if(point[1, sel_dim+1] != kNN(
+            class = func(
               new_selection,
               point[1:sel_dim],
               k=k
-            )){
-                rat[k] = rat[k]+1
+            )
+            if(point[1, sel_dim+1] != class){
+                rat[k] = rat[k] + 1
             }
         }
     }
@@ -131,9 +150,45 @@ LOO <- function(dat, func, maxK = 1, l = 2){
     dev.off()
 }
 
+#calc LOO for kNN
+.LOO_map_w_15_20 <- function(){
+    result = LOO(iris[, 3:5], kwNN, maxK=15, l=20)
+
+    png(paste0("LOO_kwNN_plot", ".png"), width = 1080, height = 540)
+    par(mfrow=c(1,2))
+    plot(
+      data.frame(k=1:length(result$rating),Rating=result$rating),
+      type="l",
+      col="red"
+    )
+    plot(
+      result$selection[, 1:2],
+      pch = 21,
+      bg = colors[result$selection$Species],
+      col = colors[result$selection$Species]
+    )
+    for(x in seq(1,8,0.1)){
+        for(y in seq(0.1,4.5,0.1)){
+            points(x,y,pch=1,col = colors[kwNN(result$selection[, 1:3], c(y,x), k=5)])
+        }
+    }
+    dev.off()
+
+    png(paste0("w_func", ".png"), width = 1080, height = 540)
+    plot(
+      data.frame("x"=1:50, "w[x]"=exp((-1:-50)/1000)),
+      type="l",
+      col="red"
+    )
+    dev.off()
+}
+
+
+######################################
+
 colors <- c(
     "setosa" = "orange",
     "versicolor" = "violet",
     "virginica" = "purple"
 )
-.LOO_15_20()
+ .LOO_map_w_15_20()
