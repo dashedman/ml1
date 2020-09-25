@@ -43,10 +43,11 @@ dist_sort = function(dat, point, dist_func = euclid_distance){
 
   kwNN <- function(dat, point, k = 1, dist_func = euclid_distance)
   {
-      w <- exp((-1:-k)/1000)
 
       orderedDat <- dist_sort(dat, point, dist_func)
       n <- dim(orderedDat)[2] - 1
+
+      w <- exp((-1:-k)/dim(orderedDat)[1])
 
       classes = rep(0, length(levels(orderedDat[, n+1])))
       for(i in 1:k){
@@ -91,7 +92,8 @@ LOO <- function(dat, func, maxK = 1, l = 2){
     plot(iris[, c(1,4)],
          pch = 21,
          bg = colors[iris$Species],
-         col = colors[iris$Species]
+         col = colors[iris$Species],
+         asp = T
     )
     #generate data
     n = 5
@@ -116,30 +118,39 @@ LOO <- function(dat, func, maxK = 1, l = 2){
 
 #calc 6NN map
 .map_6NN <- function(){
+    print("map")
     png(paste0("6NN_map_plot", ".png"))
     plot(
       iris[,3:4],
       pch = 21,
       bg = colors[iris$Species],
-      col = colors[iris$Species]
+      col = colors[iris$Species],
+      asp = T
     )
-    for(x in seq(1,8,0.1)){
-        for(y in seq(0.1,4.5,0.1)){
-            points(x,y,pch=1,col = colors[kNN(iris[,3:5], c(y,x), k=6)])
+    x = seq(1,7,0.1)
+    y = seq(0.1,2.5,0.1)
+    cols = rep(0, 150)
+    it = 1
+    for(i in x){
+        print(i)
+        for(j in y){
+            points(i,j,pch=1,col = colors[kNN(iris[,3:5], c(i,j), k=6)])
         }
     }
+
     dev.off()
 }
 
 #calc LOO for kNN
 .LOO_15_20 <- function(){
-    result = LOO(iris[, 3:5], kNN, maxK=15, l=20)
+    result = LOO(iris[, 3:5], kNN, maxK=19, l=20)
     png(paste0("LOO_kNN_plot", ".png"), width = 1080, height = 540)
     par(mfrow=c(1,2))
     plot(
-      data.frame(k=1:length(result$rating),Rating=result$rating),
+      data.frame(k=1:length(result$rating),LOO=result$rating),
       type="l",
-      col="red"
+      col="red",
+      ylim = c(0, 20)
     )
     plot(
       result$selection[, 1:2],
@@ -152,14 +163,15 @@ LOO <- function(dat, func, maxK = 1, l = 2){
 
 #calc LOO for kNN
 .LOO_map_w_15_20 <- function(){
-    result = LOO(iris[, 3:5], kwNN, maxK=15, l=20)
+    result = LOO(iris[, 3:5], kwNN, maxK=19, l=20)
 
     png(paste0("LOO_kwNN_plot", ".png"), width = 1080, height = 540)
     par(mfrow=c(1,2))
     plot(
-      data.frame(k=1:length(result$rating),Rating=result$rating),
+      data.frame(k=1:length(result$rating), LOO=result$rating),
       type="l",
-      col="red"
+      col="red",
+      ylim = c(0, 20)
     )
     plot(
       result$selection[, 1:2],
@@ -169,26 +181,32 @@ LOO <- function(dat, func, maxK = 1, l = 2){
     )
     for(x in seq(1,8,0.1)){
         for(y in seq(0.1,4.5,0.1)){
-            points(x,y,pch=1,col = colors[kwNN(result$selection[, 1:3], c(y,x), k=5)])
+            points(x,y,pch=1,col = colors[kwNN(result$selection[, 1:3], c(x,y), k=5)])
         }
     }
     dev.off()
 
     png(paste0("w_func", ".png"), width = 1080, height = 540)
     plot(
-      data.frame("x"=1:50, "w[x]"=exp((-1:-50)/1000)),
+      data.frame("x"=1:50, "w[x]"=exp((-1:-50)/50)),
       type="l",
-      col="red"
+      col="red",
+      ylim = c(0,1)
     )
     dev.off()
 }
+
+
 
 
 ######################################
 
 colors <- c(
     "setosa" = "orange",
-    "versicolor" = "violet",
+    "versicolor" = "forestgreen",
     "virginica" = "purple"
 )
- .LOO_map_w_15_20()
+
+.map_6NN()
+.LOO_15_20()
+.LOO_map_w_15_20()
