@@ -93,7 +93,8 @@ LOO <- function(dat, func, maxK = 1, l = 2){
          pch = 21,
          bg = colors[iris$Species],
          col = colors[iris$Species],
-         asp = T
+         asp = T,
+         main = "Classification of five random points with use of 1NN"
     )
     #generate data
     n = 5
@@ -119,13 +120,14 @@ LOO <- function(dat, func, maxK = 1, l = 2){
 #calc 6NN map
 .map_6NN <- function(){
     print("map")
-    png(paste0("6NN_map_plot", ".png"))
+    png(paste0("6NN_map_plot", ".png"), width = 1080, height = 540)
     plot(
       iris[,3:4],
       pch = 21,
       bg = colors[iris$Species],
       col = colors[iris$Species],
-      asp = T
+      asp = T,
+      main = "Classification map for 6NN algorithm"
     )
     x = seq(1,7,0.1)
     y = seq(0.1,2.5,0.1)
@@ -134,7 +136,7 @@ LOO <- function(dat, func, maxK = 1, l = 2){
     for(i in x){
         print(i)
         for(j in y){
-            points(i,j,pch=1,col = colors[kNN(iris[,3:5], c(i,j), k=6)])
+            points(i, j, pch=1, col = colors[kNN(iris[,3:5], c(i,j), k=6)])
         }
     }
 
@@ -150,7 +152,14 @@ LOO <- function(dat, func, maxK = 1, l = 2){
       data.frame(k=1:length(result$rating),LOO=result$rating),
       type="l",
       col="red",
-      ylim = c(0, 20)
+      ylim = c(0, 20),
+      main = "Leave One Out estimate for kNN algorithm"
+    )
+    points(
+      which.min(result$rating),
+      result$rating[which.min(result$rating)],
+      pch = 21,
+      col = "red"
     )
     plot(
       result$selection[, 1:2],
@@ -171,13 +180,22 @@ LOO <- function(dat, func, maxK = 1, l = 2){
       data.frame(k=1:length(result$rating), LOO=result$rating),
       type="l",
       col="red",
-      ylim = c(0, 20)
+      ylim = c(0, 20),
+      main = "Leave One Out estimate for kwNN algorithm"
+    )
+    points(
+      which.min(result$rating),
+      result$rating[which.min(result$rating)],
+      pch = 21,
+      col = "red"
     )
     plot(
       result$selection[, 1:2],
       pch = 21,
       bg = colors[result$selection$Species],
-      col = colors[result$selection$Species]
+      col = colors[result$selection$Species],
+      asp = T,
+      main = "Classification map for 5wNN"
     )
     for(x in seq(1,8,0.1)){
         for(y in seq(0.1,4.5,0.1)){
@@ -207,6 +225,7 @@ colors <- c(
     "virginica" = "purple"
 )
 
-.map_6NN()
-.LOO_15_20()
-.LOO_map_w_15_20()
+.random_1NN()
+#.map_6NN()
+#.LOO_15_20()
+#.LOO_map_w_15_20()
