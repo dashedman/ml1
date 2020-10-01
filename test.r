@@ -255,7 +255,7 @@ fast_kwnn_LOO <- function(selection, q=0.9){
     print("q=1")
     result = fast_kwnn_LOO(iris[, 3:5], q=1)
     png(paste0("big_LOO", ".png"), width = 1920, height = 1080)
-    par(bg = "#f0ffff")
+    par(bg = "#feffff")
     plot(
       data.frame(k=1:length(result$rating), LOO=result$rating),
       type="l",
@@ -273,7 +273,7 @@ fast_kwnn_LOO <- function(selection, q=0.9){
     print(which.min(result$rating));print(result$rating[which.min(result$rating)])
 
     print("q=0.9")
-    result = fast_kwnn_LOO(iris[, 3:5], q=0.99999)
+    result = fast_kwnn_LOO(iris[, 3:5], q=0.9999)
     lines(
       1:length(result$rating),
       y=result$rating,
@@ -289,7 +289,7 @@ fast_kwnn_LOO <- function(selection, q=0.9){
     print(which.min(result$rating));print(result$rating[which.min(result$rating)])
 
     print("q=0.7")
-    result = fast_kwnn_LOO(iris[, 3:5], q=0.9999)
+    result = fast_kwnn_LOO(iris[, 3:5], q=0.9994)
     lines(
       1:length(result$rating),
       y=result$rating,
