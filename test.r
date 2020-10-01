@@ -261,7 +261,7 @@ fast_kwnn_LOO <- function(selection, q=0.9){
       type="l",
       col="red",
       ylim = c(0, dim(result$selection)[1]),
-      main = "Leave One Out estimate for kwNN algorithm"
+      main = "Leave One Out estimate for kwNN algorithm; w=q^i"
     )
     points(
       which.min(result$rating),
