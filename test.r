@@ -179,15 +179,21 @@ potentMethod <- function(distances, potentials, dat, h=1, kernel = SqrKernel){
   l <- dim(dat)[1]
   n <- dim(dat)[2] - 1
 
-  classes <- dat[, n+1]
+  weights <- rep(0, length(levels(dat[, n+1])))
+  for(i in 1:l){
+      class <- dat[i, n+1]
+      weights[class] <- weights[class] + potentials[i]*kernel(distances[i]/h)
+  }
+  if(max(weights) != 0) return(levels(dat[, n+1])[which.max(weights)])
+  return(0)
 }
 
-getPotentials <- function(dat, h=1, eps=10, kernel = SqrKernel){
+getPotentials <- function(dat, h=1, eps=10, kernel = SqrKernel, dist_func = euclid_distance){
   l <- dim(dat)[1]
   n <- dim(dat)[2] - 1
 
   potentials <- rep(0, l)
-  err <- eps+1
+  err = eps+1
 
   distances <- matrix(0, l, l)
   for(i in 1:l){
@@ -198,11 +204,27 @@ getPotentials <- function(dat, h=1, eps=10, kernel = SqrKernel){
   }
 
   while(err>eps){
-      while(T){
+      for(lim in 1:l){
           indexR = sample(1:l, 1)
-          class <- potentMethod(distances[indexR], potentials, dat, h, kernel)
+          class <- potentMethod(distances[indexR,], potentials, dat, h, kernel)
+
+          if(class != dat[indexR, n+1]){
+              print(paste("New potention for",indexR))
+              potentials[indexR] = potentials[indexR] + 1
+              break
+          }
+      }
+
+      err = 0
+      for(i in 1:l){
+          err = err + (potentMethod(
+            distances[i,],
+            potentials,
+            dat, h, kernel
+          ) != dat[i, n+1])
       }
   }
+  return(potentials)
 }
 ####################################
 .random_1NN <- function(){
@@ -692,48 +714,101 @@ getPotentials <- function(dat, h=1, eps=10, kernel = SqrKernel){
 
 
 .Potention <- function(){
-  result = fast_parz_LOO(iris[,3:5], kernel = SqrKernel)
-  png(paste0("parzens_sqr", ".png"), width = 1080, height = 540)
+  potentials = getPotentials(iris[,3:5])
+  png(paste0("potent_sqr", ".png"), width = 1080, height = 540)
   par(mfrow=c(1,2))
   plot(
-    result$selection[, 1:2],
+    iris[, 3:4],
     pch = 21,
-    bg = colors[result$selection$Species],
-    col = colors[result$selection$Species],
+    bg = colors[iris$Species],
+    col = colors[iris$Species],
     asp = T,
-    main = "Classification map for Parzen's Window(Square kern)"
+    main = "Classification map for Potentials Function Method(Square kern)"
   )
   x = seq(
-    result$selection[which.min(result$selection[, 1]), 1],
-    result$selection[which.max(result$selection[, 1]), 1],
+    iris[which.min(iris[, 3]), 3],
+    iris[which.max(iris[, 3]), 3],
     0.1
   )
   y = seq(
-    result$selection[which.min(result$selection[, 2]), 2],
-    result$selection[which.max(result$selection[, 2]), 2],
+    iris[which.min(iris[, 4]), 4],
+    iris[which.max(iris[, 4]), 4],
     0.1
   )
+  l = dim(iris)[1]
   for(xi in x){
       print(xi)
       for(yi in y){
-          points(xi,yi,pch=1,col = colors[parzenWind(c(xi, yi), iris[, 3:5], kernel = SqrKernel)])
+          distances = rep(0, l)
+          for(i in 1:l){
+              distances[i] = euclid_distance(c(xi, yi), iris[i, 3:4])
+          }
+          points(xi, yi, pch=1, col = colors[potentMethod(
+            distances,
+            potentials,
+            iris[, 3:5],
+            kernel = SqrKernel
+          )])
       }
   }
   plot(
-    data.frame(h=(1:12) / 4, LOO=result$rating),
-    type="l",
-    col="red",
-    ylim = c(0, 150),
-    main = "Leave One Out estimate for Parzen's Window(Square kern)"
-  )
-  points(
-    which.min(result$rating)/4,
-    result$rating[which.min(result$rating)],
+    iris[, 3:4],
     pch = 21,
-    col = "red"
+    bg = colors[iris$Species],
+    col = colors[iris$Species],
+    asp = T,
+    main = "Potentials map for Potentials Function Method(Square kern)"
   )
-  print(which.min(result$rating))
-  print(result$rating[which.min(result$rating)])
+  for(i in 1:l){
+    if(potentials[i] != 0)
+      if(iris[i,5] == "setosa")
+        points(
+          iris[i, 3],
+          iris[i, 4],
+          pch = 21,
+          col = "orange",
+          bg = rgb(255,128,0,13,maxColorValue=255),
+          cex = 30
+        )
+      else if(iris[i,5] == "versicolor")
+        points(
+          iris[i, 3],
+          iris[i, 4],
+          pch = 21,
+          col = "forestgreen",
+          bg = rgb(0,255,0,13,maxColorValue=255),
+          cex = 30
+        )
+        else if(iris[i,5] == "virginica")
+          points(
+            iris[i, 3],
+            iris[i, 4],
+            pch = 21,
+            col = "purple",
+            bg = rgb(255,0,255,13,maxColorValue=255),
+            cex = 30
+          )
+  }
+
+  dev.off()
+}
+
+.STOLP <- function(){
+  margin <- rep(0,150)
+  margin_colors <- rep(0,150)
+  for(i in 1:150){
+      margin[i] = 
+  }
+  png(paste0("margin", ".png"), width = 540, height = 270)
+  plot(
+    iris[,3:4],
+    pch = 21,
+    bg = colors[margin_colors],
+    col = colors[margin_colors],
+    asp = T,
+    type = "s",
+    main = "Graphic of margin for Parzen Window(Gaus kernel)"
+  )
   dev.off()
 }
 ######################################
@@ -750,4 +825,5 @@ colors <- c(
 #.LOO_map_w_15_20()
 #.BIG_LOO()
 #.Windows6()
-.Potention()
+#.Potention()
+.STOLP()
