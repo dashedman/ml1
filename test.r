@@ -134,8 +134,13 @@ parzenWind <- function(x, select, h=1, kernel = SqrKernel, dist_func = euclid_di
 
     classes = rep(0, length(levels(select[, n+1])))
 
+    if(is.na(x)){
+      return(4)
+    }
+
     for(i in 1:l) {
         tmp_sel = select[i,1:(n+1)]
+        if(is.na(tmp_sel))next
         classes[tmp_sel[,n+1]] <- classes[tmp_sel[, n+1]] + kernel(dist_func(tmp_sel[, 1:n], x) / h)
     }
 
@@ -147,7 +152,7 @@ parzenWind <- function(x, select, h=1, kernel = SqrKernel, dist_func = euclid_di
     }
 
     # Если никакой класс не попал в окно, возвращаем другой класс
-    return(0)
+    return(4)
 }
 
 fast_parz_LOO <- function(selection, kernel = SqrKernel){
@@ -225,6 +230,110 @@ getPotentials <- function(dat, h=1, eps=10, kernel = SqrKernel, dist_func = eucl
       }
   }
   return(potentials)
+}
+
+getMarginParz <- function(dat, h=1, kernel = SqrKernel, dist_func = euclid_distance){
+  l <- dim(dat)[1]
+  n <- dim(dat)[2] - 1
+
+  margin <- rep(0, l)
+  for(i in 1:l){
+      if(is.na(dat[i, 1:n])){
+        margin[i] = NA
+        next
+      }
+      select = dat[-i,]
+      x = dat[i, 1:n]
+      classes = rep(0, length(levels(select[, n+1])))
+      l2 <- dim(select)[1]
+
+      for(j in 1:l2) {
+          tmp_sel = select[j, 1:(n+1)]
+          if(is.na(tmp_sel))next
+          classes[tmp_sel[,n+1]] <- classes[tmp_sel[, n+1]] + kernel(dist_func(tmp_sel[, 1:n], x) / h)
+      }
+
+      # Проверяем, что хоть один класс попал в окно
+      if (max(classes) != 0 ) {
+        # Возвращаем имя класса, у которого максимальное кол-во "голосов"
+          margin[i] = classes[dat[i,n+1]] - max(classes[ -as.integer(dat[i,n+1]) ])
+      }else{
+          margin[i] = 0
+      }
+  }
+
+  return(margin)
+}
+
+getMaxForClass <- function(margin , dat, class){
+  l <- dim(dat)[1]
+  n <- dim(dat)[2] - 1
+
+  max_margin = -1
+  max_index = -1
+  for(i in 1:l){
+    if(dat[i,n+1] == class & !is.na(margin[i]) & margin[i] > max_margin){
+      max_margin = margin[i]
+      max_index = i
+    }
+  }
+  return(max_index)
+}
+
+getAddOmegaVect <- function(oldOmegaLul, dat, h=h,kernel=kernel, dist_func=dist_func){
+  l <- dim(dat)[1]
+  n <- dim(dat)[2] - 1
+  classes = levels(dat[, n+1])
+
+  #считаем отступы
+  margin = getMarginParz(newDat, h=h,kernel=kernel, dist_func=dist_func)
+  margin[oldOmegaLul] = -1
+
+  #дополняем омега
+  addOmegaLuL = rep(0, length(classes))
+  for(i in 1:length(classes)){
+      addOmegaLuL[i] <- getMaxForClass(margin , dat, classes[i])
+  }
+  return(addOmegaLuL)
+}
+
+STOLP_parz <- function(dat, eps = 10, delta = 0, h=1, kernel = SqrKernel, dist_func = euclid_distance){
+  #считаем отступы
+  margin = getMarginParz(dat, h=h,kernel=kernel, dist_func=dist_func)
+
+  #отбрасываем шумовые
+  clearMarginIndexes = (margin > delta)
+  margin = margin[clearMarginIndexes]
+  dat = dat[clearMarginIndexes,]
+
+  l <- dim(dat)[1]
+  n <- dim(dat)[2] - 1
+  classes = levels(dat[, n+1])
+
+  #начальный омега
+  OmegaLuL <- rep(0, length(classes))
+  for(i in 1:length(classes)){
+    OmegaLuL[i] <- getMaxForClass(margin , dat, classes[i])
+  }
+
+  #наращивание омега
+  error_counter <- eps+1
+  for(it in 1:100){
+    print(paste("it:", it, "errors:",error_counter))
+    print( OmegaLuL)
+    error_counter <- 0
+    for(i in 1:l){
+      x = dat[i,]
+      if(parzenWind(x[,1:n], dat[OmegaLuL,], h, kernel, dist_func) != x[,n+1]) error_counter <- error_counter + 1
+    }
+
+    if(error_counter > eps){
+      OmegaLuL <- c(OmegaLuL, getAddOmegaVect(OmegaLuL, dat, h=h,kernel=kernel, dist_func=dist_func))
+    }else{
+      break;
+    }
+  }
+  return(dat[OmegaLuL,])
 }
 ####################################
 .random_1NN <- function(){
@@ -793,23 +902,78 @@ getPotentials <- function(dat, h=1, eps=10, kernel = SqrKernel, dist_func = eucl
   dev.off()
 }
 
-.STOLP <- function(){
-  margin <- rep(0,150)
+.Margins <- function(){
+  margin = getMarginParz(iris[3:5], kernel = GausKernel)
+  sorted_margin = sort(margin)
   margin_colors <- rep(0,150)
+  colors2 <- c(
+      "etalon" = "darkgreen",
+      "good" = "lawngreen",
+      "neutral" = "khaki1",
+      "noise" = "darkred"
+  )
   for(i in 1:150){
-      margin[i] = 
+      if(sorted_margin[i] > 5){
+          margin_colors[i] = colors2[1]
+      }else if(sorted_margin[i] > 1){
+        margin_colors[i] = colors2[2]
+      }else if(sorted_margin[i] >=  -1){
+        margin_colors[i] = colors2[3]
+      }else{
+        margin_colors[i] = colors2[4]
+      }
   }
   png(paste0("margin", ".png"), width = 540, height = 270)
+  par(bg = "#eeeeee")
   plot(
-    iris[,3:4],
+    1:150,
+    sorted_margin,
     pch = 21,
-    bg = colors[margin_colors],
-    col = colors[margin_colors],
+    bg = margin_colors,
+    col = margin_colors,
     asp = T,
-    type = "s",
+    type = "h",
     main = "Graphic of margin for Parzen Window(Gaus kernel)"
   )
   dev.off()
+}
+.STOLP <- function(){
+  selection = iris[3:5]
+  l = dim(selection)[1]
+
+  etalons <- STOLP_parz(selection, eps = 10, delta = 0, h = 1, kernel = GausKernel, dist_func = euclid_distance)
+
+  start_time = proc.time()
+  stok_error = 0
+  for(i in 1:l){
+    dat = selection[-i,]
+    point = selection[i,]
+    n <- dim(dat)[2] - 1
+
+    if(point[1, n+1] != parzenWind(point[, 1:n], dat, h=1, kernel = GausKernel)){
+        stok_error = stok_error + 1
+    }
+  }
+  stok_time = proc.time() - start_time
+
+  start_time = proc.time()
+  stolp_error = 0
+  for(i in 1:l){
+    dat = selection[-i,]
+    point = selection[i,]
+    n <- dim(dat)[2] - 1
+
+    if(point[1, n+1] != parzenWind(point[, 1:n], etalons, h=1, kernel = GausKernel)){
+        stolp_error = stolp_error + 1
+    }
+  }
+  stolp_time = proc.time() - start_time
+
+  print(stok_time)
+  print(stok_error)
+
+  print(stolp_time)
+  print(stolp_error)
 }
 ######################################
 
@@ -826,4 +990,5 @@ colors <- c(
 #.BIG_LOO()
 #.Windows6()
 #.Potention()
+#.Margins()
 .STOLP()

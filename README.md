@@ -188,5 +188,129 @@ potentMethod <- function(distances, potentials, dat, h=1, kernel = SqrKernel){
 }
 ```
 
+Вспомогательный алгоритм для подсчета потенциалов:
+```R
+#dat - данные в формате: список векторов типа [ x1, x2, ... , xn, class]
+#где x1, ..., xn - координаты екземпляра
+#h - ширина окон double
+#eps - допустимое разрешенное количество ошибок для массива потенциалов
+#kernel - функция ядра
+#dist_func - метрическая функция расстояния
+getPotentials <- function(dat, h=1, eps=10, kernel = SqrKernel, dist_func = euclid_distance){
+  l <- dim(dat)[1]
+  n <- dim(dat)[2] - 1
+
+  potentials <- rep(0, l)
+  err = eps+1
+
+  distances <- matrix(0, l, l)
+  for(i in 1:l){
+      point = dat[i, 1:n]
+      for(j in 1:l){
+          distances[i,j] = dist_func(point, dat[j, 1:n])
+      }
+  }
+
+  while(err>eps){
+      for(lim in 1:l){
+          indexR = sample(1:l, 1)
+          class <- potentMethod(distances[indexR,], potentials, dat, h, kernel)
+
+          if(class != dat[indexR, n+1]){
+              print(paste("New potention for",indexR))
+              potentials[indexR] = potentials[indexR] + 1
+              break
+          }
+      }
+
+      err = 0
+      for(i in 1:l){
+          err = err + (potentMethod(
+            distances[i,],
+            potentials,
+            dat, h, kernel
+          ) != dat[i, n+1])
+      }
+  }
+  return(potentials)
+}
+```
 Ниже представленна карта классификации и карта потенциалов для Квадратного ядра:
 ![квадратное ядро](potent_sqr.png)
+
+STOLP метод выбора эталонов
+-------------------------------
+Это вспомогательный алгоритм который позволяет значительно уменьшить размер выборки, при это незначительно теряя предсказательной точности. Алгорит занимается тем что отбрасывает шумовые объекты, и вычисляет эталонные.
+
+> Данный алгоритм является реализацией алгоритма STOLP для метода парзеновского окна.
+
+```R
+#dat - data frame выборки, последний столбец фактор класс
+#eps - допустимое количество ошибок
+#delta - граница допустимого размера отступа
+#далее аргументы для применяемого парзеновского окна
+STOLP_parz <- function(dat, eps = 10, delta = 0, h=1, kernel = SqrKernel, dist_func = euclid_distance){
+  #считаем отступы
+  margin = getMarginParz(dat, h=h,kernel=kernel, dist_func=dist_func)
+
+  #отбрасываем шумовые
+  clearMarginIndexes = (margin > delta)
+  margin = margin[clearMarginIndexes]
+  dat = dat[clearMarginIndexes,]
+
+  l <- dim(dat)[1]
+  n <- dim(dat)[2] - 1
+  classes = levels(dat[, n+1])
+
+  #начальный омега
+  OmegaLuL <- rep(0, length(classes))
+  for(i in 1:length(classes)){
+    OmegaLuL[i] <- getMaxForClass(margin , dat, classes[i])
+  }
+
+  #наращивание омега
+  error_counter <- eps+1
+  for(it in 1:100){
+    #проверяем омега на валидность
+    error_counter <- 0
+    for(i in 1:l){
+      x = dat[i,]
+      if(parzenWind(x[,1:n], dat[OmegaLuL,], h, kernel, dist_func) != x[,n+1]) error_counter <- error_counter + 1
+    }
+
+    #дополняем омега
+    if(error_counter > eps){
+      OmegaLuL <- c(OmegaLuL, getAddOmegaVect(OmegaLuL, dat, h=h,kernel=kernel, dist_func=dist_func))
+    }else{
+      break;
+    }
+  }
+  return(dat[OmegaLuL,])
+}
+```
+
+![Отступы для ирисов](margin.png)
+
+##### Сравнение показателей для Парзеновского окна на полной выборке и на эталонах(Гаусово ядро)
+
+| h=1    | Полная выборка | Эталоны |
+|:------:| --------------:| -------:|
+| Время  | 1.27           | 57.73   |
+| Ошибки | 8/150          | 6/150   |
+
+Имеем значительный прирост скорости классификации(аж на 4500%), и даже легкое увеличение точности на бучающей выборке!
+
+Сравнительная таблица для метрических классификаторов
+-------------------------------
+
+
+| Алгоритм       | Параметры            | Ошибка  |
+|:--------------:| --------------------:| -------:|
+| 1NN            |                      | 7/150   |
+| kNN            | k=6                  | 5/150   |
+| kwNN           | k=3                  | 6/150   |
+| Parzen Windows | kernel:Gause; h=0.25 | 6/150   |
+| STOLP for PW   | kernel:Gause; h=1    | 6/150   |
+
+Заключение: все рассмотреные метрические классификаторы относительно просты и имеют схожую скорость работы.
+Применение алгоритма STOLP позволяет качественно ускорить классификацию метрическими алгоритмами.
