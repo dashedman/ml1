@@ -937,6 +937,7 @@ STOLP_parz <- function(dat, eps = 10, delta = 0, h=1, kernel = SqrKernel, dist_f
   )
   dev.off()
 }
+
 .STOLP <- function(){
   selection = iris[3:5]
   l = dim(selection)[1]
@@ -974,6 +975,33 @@ STOLP_parz <- function(dat, eps = 10, delta = 0, h=1, kernel = SqrKernel, dist_f
 
   print(stolp_time)
   print(stolp_error)
+
+  png(paste0("stolp_map", ".png"))
+  plot(
+    etalons[, 1:2],
+    pch = 22,
+    bg = colors[etalons$Species],
+    col = colors[etalons$Species],
+    asp = T,
+    main = "Classification map for STOLP(Parzen's Window, Gause kern)"
+  )
+  x = seq(
+    etalons[which.min(etalons[, 1]), 1],
+    etalons[which.max(etalons[, 1]), 1],
+    0.1
+  )
+  y = seq(
+    etalons[which.min(etalons[, 2]), 2],
+    etalons[which.max(etalons[, 2]), 2],
+    0.1
+  )
+  for(xi in x){
+      print(xi)
+      for(yi in y){
+          points(xi,yi,pch=1,col = colors[parzenWind(c(xi, yi), iris[, 3:5], kernel = GausKernel)])
+      }
+  }
+  dev.off()
 }
 ######################################
 
