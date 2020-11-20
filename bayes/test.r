@@ -126,7 +126,7 @@ get3DMesh <- function(boundedBox, z_func, delt = 0.1){
         show = TRUE,
         start = -0.4,
         end = 0.4,
-        size = 0.015,
+        size = 1/64,
         usecolormap=TRUE,
         highlightcolor="#f0f0c0",
         project=list(z=TRUE)
