@@ -4,7 +4,7 @@ euclid_distance = function(x, y){
   sqrt(sum((x-y)^2))
 }
 
-dist_sort = function(dat, point, dist_func = euclid_distance){
+dist_sort <- function(dat, point, dist_func = euclid_distance){
       l <- dim(dat)[1]
       n <- dim(dat)[2] - 1
 
@@ -986,13 +986,13 @@ STOLP_parz <- function(dat, eps = 10, delta = 0, h=1, kernel = SqrKernel, dist_f
     main = "Classification map for STOLP(Parzen's Window, Gause kern)"
   )
   x = seq(
-    etalons[which.min(etalons[, 1]), 1],
-    etalons[which.max(etalons[, 1]), 1],
+    selection[which.min(selection[, 1]), 1],
+    selection[which.max(selection[, 1]), 1],
     0.1
   )
   y = seq(
-    etalons[which.min(etalons[, 2]), 2],
-    etalons[which.max(etalons[, 2]), 2],
+    selection[which.min(selection[, 2]), 2],
+    selection[which.max(selection[, 2]), 2],
     0.1
   )
   for(xi in x){
@@ -1001,6 +1001,7 @@ STOLP_parz <- function(dat, eps = 10, delta = 0, h=1, kernel = SqrKernel, dist_f
           points(xi,yi,pch=1,col = colors[parzenWind(c(xi, yi), iris[, 3:5], kernel = GausKernel)])
       }
   }
+  points(selection[, 1:2], pch=3, col = colors[selection[,3]])
   dev.off()
 }
 ######################################
