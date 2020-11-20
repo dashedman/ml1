@@ -91,7 +91,7 @@ get3DMesh <- function(boundedBox, z_func, delt = 0.1){
         )
       )
   )
-  saveWidget(fig, file = "contour.html",selfcontained = FALSE,background = "#333333")
+  saveWidget(fig, file = "contour.html",selfcontained = FALSE,libdir = "plotly_lib",background = "#333333")
 }
 
 .LevelLines2 <- function(){
@@ -114,7 +114,8 @@ get3DMesh <- function(boundedBox, z_func, delt = 0.1){
     x = ~coords$x,
     y = ~coords$y,
     z = ~coords$z,
-    colorscale = list(c(0, "#10D0C0"), c(0.5, "#C0D030"), c(1,"#F02010")),
+    colorscale = list(c(0, "#10D0C0"),c(0.5, "#FFFFAA"), c(1,"#F02010")), #c(0.5, "#FFFF00")
+    #opacityscale = list(c(0, 1),c(0.45, 1),c(0.49, 0),c(0.51, 0), c(0.55,1), c(1, 1)),
     contours = list(
       x = list(
         highlightcolor="#f0f0c0"
@@ -162,7 +163,7 @@ get3DMesh <- function(boundedBox, z_func, delt = 0.1){
         )
       )
   )
-  saveWidget(fig, file = "contour2.html",selfcontained = FALSE,background = "#333333")
+  saveWidget(fig, file = "contour2.html",selfcontained = FALSE,libdir = "plotly_lib",background = "#333333")
 }
 ######################################
 

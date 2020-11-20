@@ -23,7 +23,9 @@ M = [[1, 0], [0, 1]]
 
 !["Countour1"](contour_prev.png)
 
-["Интерактивный граффик, щелкните!"](http://htmlpreview.github.io/?https://github.com/dashedman/ml1/blob/master/bayes/contour.html)
+["Интерактивный граффик, щелкните!"](https://dashedman.github.io/contour.html)
+
+**_Загрузка может быть длительной!_**
 
 #### Граффик плотности двух классов с линиями уровня
 
@@ -37,7 +39,9 @@ M2 = [[0.8, 0], [-1, 1.2]]
 
 !["Countour2"](contour2_prev.png)
 
-["Интерактивный граффик, щелкните!"](http://htmlpreview.github.io/?https://github.com/dashedman/ml1/blob/master/bayes/contour2.html)
+["Интерактивный граффик, щелкните!"](https://dashedman.github.io/contour2.html)
+
+**_Загрузка может быть длительной!_**
 
 ## Баесовские алгоритмы
 
