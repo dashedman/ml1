@@ -151,7 +151,7 @@ NaiveBayes <- function(x, Py, lambdas){
 ####################################
 .LevelLines <- function(){
   u <- c(0, 0)
-  SigmMatr <- matrix(c(0, 0, 0, 1), nrow = 2)
+  SigmMatr <- matrix(c(4, 1.2, 1.2, 1), nrow = 2, byrow = T)
   #1 2
   #3 4
   z_func <- function(x){
@@ -215,7 +215,7 @@ NaiveBayes <- function(x, Py, lambdas){
         )
       )
   )
-  saveWidget(fig, file = "contour.html",selfcontained = FALSE,libdir = "plotly_lib",background = "#333333")
+  saveWidget(fig, file = "contour5.html", selfcontained = FALSE, libdir = "plotly_lib", background = "#333333")
 }
 
 .LevelLines2 <- function(){
@@ -539,8 +539,8 @@ NaiveBayes <- function(x, Py, lambdas){
 }
 ######################################
 
-#.LevelLines()
+.LevelLines()
 #.LevelLines2()
 #.NaiveBayes()
 #.PlugInBayes()
-.LDF()
+#.LDF()
