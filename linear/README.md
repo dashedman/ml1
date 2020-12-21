@@ -48,26 +48,88 @@
 
 где, `ω` - вектор параметров разделяющей поверхности, `η` - коэффициент темпа обучения, `∇Q` - градиент нашего функционала эмпирического риска (`∇` - оператор набла).
 
+
+Реализация для любой функции риска:
+
+```R
+stohastGrad <- function(dat, L, dL, etha = 1, lambda = 0.5, history = F){
+
+  l <- dim(dat)[1]
+  n <- dim(dat)[2] - 1
+
+  omega <- runif(n, -0.5, 0.5)
+  omegaHist <- matrix(c(omega), ncol = n)
+
+  Q <- 0
+  for(i in 1:l){
+    x = dat[i,1:n]
+    y = dat[i,n+1]
+    Q <- Q + L(x, y, omega)
+  }
+  QHist <- c(Q)
+
+  for(it in 1:1000){
+    randIndex <- sample(1:l, 1)
+
+    eps <- L(dat[randIndex, 1:n], dat[randIndex, n+1], omega)
+    step <- etha*dL(dat[randIndex, 1:n], dat[randIndex, n+1], omega)/it
+    newQ <- (1-lambda)*Q + lambda*eps
+
+    print(c(it, omega, Q))
+    if(all(abs(step) < 0.0005) || all(abs(Q - newQ) < 0.00001)){
+      print("break")
+      break
+    }
+
+    omega <- omega - step
+    Q <- newQ
+
+    if(history){
+      QHist <- c(QHist, Q)
+      omegaHist <- rbind(omegaHist, omega)
+    }
+  }
+
+  return(list(omega=omega, omegaHist=omegaHist, QHist = QHist))
+}
+```
+
 ### ADALINE
 
 Адалайн один из методов обучения стохастического градиента на основе *минимизации эмпирического риска*, использует в качестве *функции потерь* квадратичную: `L(x, y) = (M(ω) - y)^2`, при условии что, у нас `Y = {-1,+1}`, `M(ω) = y_i*dot(ω, x_i)`.
 
-При такой функции потерь выходит итерационная формула: `ω := ω - η*sum(i,1,m){ 2*(dot(ω, x_i) - y_i)*x_i }`
+При такой функции потерь выходит итерационная формула: `ω := ω - η*2*(dot(ω, x_i) - y_i)*x_i`
 
+```R
+adaL <- function(xi, yi, omega){
+  return((dot(omega, xi)*yi-1)^2)
+}
+adadL <- function(xi, yi, omega){
+  return(2*(dot(omega, xi) - yi)*xi)
+}
+```
 
 ### Правило Хэбба
 
-чертежи
+Правило Хебба(Персептрон Розенблатта) - также один из методов обучения стохастического градиента.
+Само правило заключается в том что, мы меняем веса только тогда когда `M < 0`. И меняем их на величину `xi*yi`.
+
+ В качестве *функции потерь* используется: `L(x, y) = (-M(ω), 0)`, при условии что, у нас `Y = {-1,+1}`, `M(ω) = y_i*dot(ω, x_i)`
+
+ Итерационная формула: `ω := ω - η*y_i*x_i `
+
+```R
+hebbL <- function(xi, yi, omega){
+  return(max(-dot(omega, xi)*yi, 0))
+}
+hebbdL <- function(xi, yi, omega){
+  return(yi*xi)
+}
+```
 
 #### Сравнение
 
-
-
-## Заглавиие
-[В начало](#линейный-классификатор)
-Описание
-
-Код:
-```R
-
-```
+|ADALINE|Hebb Rule|
+| - | - |
+|![график адалайн](adaline.png)|![график хебба](hebb.png)|
+|![график Q адалайн](adalineQ.png)|![график Q хебба](hebbQ.png)|
